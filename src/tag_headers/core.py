@@ -23,7 +23,9 @@ def open_in(path: Path) -> tuple[IO[str], subprocess.Popen | None]:
     return gzip.open(path, "rt"), None
 
 
-def open_out(path: Path) -> tuple[IO[str], subprocess.Popen | None, IO[bytes] | None]:
+def open_out(
+    path: Path, threads: int | None = None
+) -> tuple[IO[str], subprocess.Popen | None, IO[bytes] | None]:
     if path.suffix != ".gz":
         return open(path, "w"), None, None
     if shutil.which("pigz"):
@@ -61,8 +63,13 @@ def tag_headers(
     out_r2: Path,
     on_batch: Callable[[int], None] | None = None,
     batch_size: int = BATCH_SIZE,
+    threads: int | None = None,
 ) -> int:
-    """Rewrite R1/R2 headers so the index field is I1+I2. Returns the record count."""
+    """Rewrite R1/R2 headers so the index field is I1+I2. Returns the record count.
+
+    threads is the total CPU budget; each of the two pigz compressors gets half.
+    """
+    per_writer = max(1, threads // 2) if threads else None
     n = 0
     with ExitStack() as stack:
         procs = []
@@ -75,7 +82,7 @@ def tag_headers(
                 procs.append(proc)
         writers = []
         for p in (out_r1, out_r2):
-            f, proc, raw = open_out(p)
+            f, proc, raw = open_out(p, per_writer)
             writers.append(f)
             if proc:
                 procs.append(proc)

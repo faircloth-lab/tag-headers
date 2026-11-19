@@ -37,8 +37,16 @@ exists = click.Path(exists=True, dir_okay=False, path_type=Path)
     default=None,
     help="Expected record count. Adds a percent bar and ETA; otherwise shows a running count.",
 )
+@click.option(
+    "--threads",
+    type=click.IntRange(min=1),
+    envvar="SLURM_CPUS_PER_TASK",
+    default=None,
+    help="CPUs to use for compression, split across the two outputs. "
+    "Defaults to $SLURM_CPUS_PER_TASK, else pigz decides.",
+)
 @click.option("--batch-size", type=int, default=50_000, show_default=True)
-def main(i1, i2, r1, r2, out_dir, total, batch_size):
+def main(i1, i2, r1, r2, out_dir, total, threads, batch_size):
     """Append the I2 index to the I1 index in the R1/R2 FASTQ headers.
 
     Header comment 1:N:0:ACGT becomes 1:N:0:ACGT+TTGCAAGT. Reads are matched
@@ -71,6 +79,7 @@ def main(i1, i2, r1, r2, out_dir, total, batch_size):
                 out_r2,
                 on_batch=lambda k: progress.advance(task, k),
                 batch_size=batch_size,
+                threads=threads,
             )
         except (ValueError, RuntimeError) as e:
             raise click.ClickException(str(e))

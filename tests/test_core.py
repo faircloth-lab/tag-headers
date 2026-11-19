@@ -76,3 +76,14 @@ def test_cli(tmp_path):
     )
     assert res.exit_code == 0, res.output
     assert (out / "r1.fastq.gz").exists()
+
+
+def test_threads(tmp_path):
+    p = make(tmp_path)
+    out = tmp_path / "out"
+    res = CliRunner().invoke(
+        main, [f"--{k}={v}" for k, v in p.items()] + [f"--out-dir={out}", "--threads=4"]
+    )
+    assert res.exit_code == 0, res.output
+    with gzip.open(out / "r1.fastq.gz", "rt") as f:
+        assert f.readline().strip() == "@r1 1:N:0:AAAAAAAA+CCCCCCCC"

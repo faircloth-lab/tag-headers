@@ -1,0 +1,19 @@
+[project]
+name = "tag-headers"
+version = "0.1.0"
+description = "Append the I2 index to the I1 index in R1/R2 FASTQ headers"
+requires-python = ">=3.11"
+dependencies = ["click>=8.1", "rich>=13"]
+
+[project.scripts]
+tag-headers = "tag_headers.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tag_headers"]
